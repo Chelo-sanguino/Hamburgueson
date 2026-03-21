@@ -1,0 +1,45 @@
+/* Colores de marca Hamburguesón */
+:root {
+    --hamburgueson-yellow: #ffc107;
+    --hamburgueson-black: #121212;
+    --hamburgueson-card: #1e1e1e;
+}
+
+body {
+    background-color: var(--hamburgueson-black);
+    color: white;
+}
+
+/* Tarjetas Negras con bordes Amarillos */
+.card {
+    background-color: var(--hamburgueson-card);
+    border: 1px solid var(--hamburgueson-yellow);
+    color: white;
+}
+
+.card-header {
+    background-color: var(--hamburgueson-yellow) !important;
+    color: black !important;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* El valor de Ganancias en Grande */
+#stat-ganancia {
+    color: var(--hamburgueson-yellow);
+    font-weight: bold;
+    font-size: 3rem;
+}
+
+/* Botón de Actualizar */
+.btn-dark {
+    background-color: var(--hamburgueson-yellow);
+    color: black;
+    border: none;
+    font-weight: bold;
+}
+
+.btn-dark:hover {
+    background-color: #e0a800;
+    color: black;
+}

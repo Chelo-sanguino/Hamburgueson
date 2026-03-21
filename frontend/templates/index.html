@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hamburguesón - Punto de Venta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --hb-yellow: #FFD000;
+            --hb-yellow-dark: #C9A800;
+            --hb-yellow-glow: rgba(255, 208, 0, 0.15);
+            --hb-black: #0a0a0a;
+            --hb-surface: #141414;
+            --hb-surface-2: #1e1e1e;
+            --hb-border: #2a2a2a;
+            --hb-text: #f0f0f0;
+            --hb-text-muted: #888;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--hb-black);
+            color: var(--hb-text);
+            font-family: 'Barlow', sans-serif;
+            font-size: 15px;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(ellipse at 10% 0%, rgba(255,208,0,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 100%, rgba(255,208,0,0.04) 0%, transparent 50%);
+        }
+
+        /* ─── Navbar ─── */
+        .navbar {
+            background-color: var(--hb-surface) !important;
+            border-bottom: 2px solid var(--hb-yellow);
+            padding: 10px 20px;
+            box-shadow: 0 4px 20px rgba(255,208,0,0.1);
+        }
+
+        .navbar-brand {
+            font-family: 'Bebas Neue', sans-serif;
+            color: var(--hb-yellow) !important;
+            font-size: 1.6rem;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(255,208,0,0.4);
+        }
+
+        .logo-img {
+            height: 38px;
+            width: auto;
+            margin-right: 10px;
+            border-radius: 5px;
+        }
+
+        /* ─── Stats Badge ─── */
+        .stat-badge {
+            background: rgba(255,208,0,0.1);
+            border: 1px solid rgba(255,208,0,0.3);
+            border-radius: 8px;
+            padding: 5px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--hb-text);
+            letter-spacing: 0.5px;
+        }
+
+        .stat-badge .value {
+            color: var(--hb-yellow);
+            font-weight: 700;
+        }
+
+        /* ─── Section Header ─── */
+        .section-header {
+            background: linear-gradient(90deg, var(--hb-yellow), #FFA500);
+            color: #000;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            padding: 10px 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(255,208,0,0.25);
+        }
+
+        /* ─── Product Cards ─── */
+        .product-card {
+            background-color: var(--hb-surface);
+            border: 1px solid var(--hb-border);
+            border-radius: 14px;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+            border: 1.5px solid transparent;
+            transition: border-color 0.25s;
+            pointer-events: none;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 28px rgba(255,208,0,0.18);
+        }
+
+        .product-card:hover::before {
+            border-color: var(--hb-yellow);
+        }
+
+        .product-card .card-body {
+            padding: 16px;
+        }
+
+        .product-card .product-name {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--hb-text);
+            line-height: 1.3;
+            margin-bottom: 4px;
+        }
+
+        .product-card .product-desc {
+            font-size: 0.8rem;
+            color: var(--hb-text-muted);
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .product-card .product-price {
+            color: var(--hb-yellow);
+            font-weight: 800;
+            font-size: 1.25rem;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        .btn-add {
+            background: var(--hb-yellow);
+            color: #000;
+            font-weight: 700;
+            font-size: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 14px;
+            transition: background 0.2s, transform 0.1s;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-add:hover {
+            background: var(--hb-yellow-dark);
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        /* ─── Sidebar / Order Panel ─── */
+        .order-panel {
+            background-color: var(--hb-surface);
+            border: 1px solid var(--hb-border);
+            border-top: 3px solid var(--hb-yellow);
+            border-radius: 14px;
+            height: calc(100vh - 105px);
+            position: sticky;
+            top: 80px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+
+        .order-panel-header {
+            background: linear-gradient(90deg, var(--hb-yellow), #FFA500);
+            color: #000;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .order-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--hb-border) transparent;
+        }
+
+        .order-list::-webkit-scrollbar { width: 4px; }
+        .order-list::-webkit-scrollbar-thumb { background: var(--hb-border); border-radius: 4px; }
+
+        /* Cart item */
+        .cart-item {
+            background: var(--hb-surface-2);
+            border: 1px solid var(--hb-border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            transition: background 0.15s;
+        }
+
+        .cart-item:hover { background: #252525; }
+
+        .cart-item-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--hb-text);
+            flex: 1;
+        }
+
+        .cart-item-price {
+            color: var(--hb-yellow);
+            font-weight: 700;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .cart-qty {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .qty-btn {
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--hb-border);
+            background: #333;
+            color: var(--hb-text);
+            border-radius: 5px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .qty-btn:hover {
+            background: var(--hb-yellow);
+            color: #000;
+            border-color: var(--hb-yellow);
+        }
+
+        .qty-value {
+            font-weight: 700;
+            font-size: 0.95rem;
+            min-width: 18px;
+            text-align: center;
+            color: var(--hb-text);
+        }
+
+        /* Total footer */
+        .order-footer {
+            padding: 16px;
+            border-top: 1px solid var(--hb-border);
+            background: var(--hb-surface);
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .total-label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            color: var(--hb-text);
+        }
+
+        .total-amount {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.7rem;
+            letter-spacing: 2px;
+            color: var(--hb-yellow);
+            text-shadow: 0 0 12px rgba(255,208,0,0.3);
+        }
+
+        .btn-checkout {
+            width: 100%;
+            background: linear-gradient(135deg, var(--hb-yellow), #FFA500);
+            color: #000;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.15rem;
+            letter-spacing: 3px;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(255,208,0,0.3);
+        }
+
+        .btn-checkout:hover {
+            background: linear-gradient(135deg, #FFE040, #FFB830);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,208,0,0.45);
+            color: #000;
+        }
+
+        .btn-checkout:active {
+            transform: translateY(0);
+        }
+
+        /* ─── Nav Buttons ─── */
+        .btn-config {
+            background: transparent;
+            border: 1.5px solid rgba(255,208,0,0.5);
+            color: var(--hb-yellow);
+            font-weight: 600;
+            font-size: 0.8rem;
+            border-radius: 8px;
+            padding: 6px 14px;
+            transition: 0.2s;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-config:hover {
+            background: rgba(255,208,0,0.1);
+            border-color: var(--hb-yellow);
+            color: var(--hb-yellow);
+        }
+
+        .btn-caja {
+            background: var(--hb-yellow);
+            color: #000;
+            font-weight: 700;
+            font-size: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 16px;
+            transition: 0.2s;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-caja:hover {
+            background: var(--hb-yellow-dark);
+            color: #000;
+        }
+
+        /* ─── Empty cart ─── */
+        .empty-cart {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--hb-text-muted);
+        }
+
+        .empty-cart .icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: block;
+            opacity: 0.5;
+        }
+
+        .empty-cart p {
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* ─── Inputs ─── */
+        .form-control {
+            background-color: var(--hb-surface-2);
+            border: 1px solid var(--hb-border);
+            color: var(--hb-text);
+            border-radius: 8px;
+        }
+
+        .form-control:focus {
+            background-color: #252525;
+            border-color: var(--hb-yellow);
+            color: var(--hb-text);
+            box-shadow: 0 0 0 3px rgba(255,208,0,0.1);
+        }
+
+        /* ─── Animations ─── */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .product-card {
+            animation: fadeInUp 0.3s ease both;
+        }
+
+        /* ELIMINAR CUALQUIER RASTRO DE AZUL */
+        .btn-primary, .bg-primary, .btn-check:checked + .btn-primary {
+            background-color: var(--hb-yellow) !important;
+            border-color: var(--hb-yellow) !important;
+            color: #000 !important;
+        }
+
+        /* Ajuste del Logo Circular */
+        .logo-img {
+            height: 45px;
+            width: 45px;
+            object-fit: cover;
+            border: 2px solid var(--hb-yellow);
+            border-radius: 50%;
+        }
+
+        /* Forzar Amarillo en Botones de Cantidad */
+        .qty-btn:hover {
+            background: var(--hb-yellow) !important;
+            color: #000 !important;
+            border-color: var(--hb-yellow) !important;
+        }
+
+        /* Mejorar visibilidad de las Tarjetas */
+        .product-card {
+            background-color: #1a1a1a !important; /* Un poco más claro que el fondo */
+        }
+        .family-section {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .family-section:hover {
+            background: #1e1e1e !important;
+        }
+
+        .btn-outline-light:hover {
+            background-color: var(--hb-yellow) !important;
+            color: black !important;
+            border-color: var(--hb-yellow) !important;
+        }
+
+        /* Botones de extras con mejor contraste */
+        .btn-outline-warning {
+            background-color: #1a1a1a;
+        }
+
+        .btn-outline-warning:hover {
+            background-color: var(--hb-yellow) !important;
+            color: black !important;
+            transform: scale(1.05);
+        }
+
+        /* Scrollbar personalizada para el modal */
+        #modal-extras-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        #modal-extras-body::-webkit-scrollbar-thumb {
+            background: var(--hb-yellow);
+            border-radius: 10px;
+        }
+        
+        .badge:hover {
+            background-color: #2a2a2a !important;
+            border-color: #ff4444 !important;
+            color: #ff4444 !important;
+        }
+
+        .cart-item button:hover {
+            transform: scale(1.1);
+            transition: 0.2s;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark mb-4 sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="/static/img/logo.png" alt="Logo Hamburguesón" 
+                    width="50" height="50" class="me-3 rounded-circle border border-warning border-2 shadow-sm">
+                <span style="letter-spacing: 1px;">HAMBURGUESON</span>
+            </a>
+            
+            <div class="d-flex align-items-center gap-2">
+                <div class="stat-badge">
+                    ⭐ Semanal: <span class="value" id="txt-semanal">Cargando...</span>
+                </div>
+                <a href="/admin" class="btn-config">⚙️ CONFIGURACIÓN</a>
+                <button class="btn-caja" onclick="abrirCaja()">ABRIR CAJA</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4">
+        <div class="row g-4">
+
+            <!-- Products Grid -->
+            <div class="col-md-8">
+                <div class="section-header">
+                    🍔 Menú de Productos
+                </div>
+
+                <div class="d-flex gap-2 overflow-auto pb-3 mb-4" id="filtro-categorias">
+                    <button class="btn btn-yellow btn-sm active" onclick="filtrarProductos('Todas')">Todas</button>
+                    <button class="btn btn-outline-warning btn-sm fw-bold" onclick="filtrarProductos('Semanales')">⭐ SEMANALES</button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="filtrarProductos('Hamburguesas')">Hamburguesas</button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="filtrarProductos('Sandwiches')">Sándwiches</button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="filtrarProductos('Platos')">Platos</button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="filtrarProductos('Papas')">Papas</button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="filtrarProductos('Sodas')">Bebidas</button>
+
+                </div>
+
+                <div class="row g-3" id="contenedor-productos">
+                    <!-- Ejemplo de tarjeta (generado dinámicamente por JS) -->
+                    <!-- 
+                    <div class="col-6 col-lg-4">
+                        <div class="product-card" onclick="agregarAlCarrito(item)">
+                            <div class="card-body">
+                                <div class="product-name">Hamburguesa Clásica</div>
+                                <div class="product-desc">Carne, lechuga, tomate, queso</div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="product-price">25.00 Bs.</span>
+                                    <button class="btn-add">+ AGREGAR</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    -->
+                </div>
+            </div>
+
+            <!-- Order Panel -->
+            <div class="col-md-4">
+                <div class="order-panel">
+                    <div class="order-panel-header">
+                        🛒 Pedido Actual
+                    </div>
+
+                    <div class="order-list" id="lista-carrito">
+                        <div class="empty-cart">
+                            <span class="icon">🍔</span>
+                            <p>Agrega productos al pedido</p>
+                        </div>
+                    </div>
+
+                    <div class="order-footer">
+                        <div class="mb-3">
+                            <label class="text-warning small fw-bold mb-1 d-block">MÉTODO DE PAGO:</label>
+                            <select id="metodo-pago" class="form-control bg-dark text-white border-warning btn-sm">
+                                <option value="Efectivo">💵 Efectivo</option>
+                                <option value="QR">📱 Transferencia QR</option>
+                                <option value="Tarjeta" disabled>💳 Tarjeta (Próximamente)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="total-row">
+                            <span class="total-label">Total</span>
+                            <span class="total-amount" id="total-pedido">0.00 Bs.</span>
+                        </div>
+                        <button class="btn-checkout" onclick="finalizarVenta()">
+                            🖨️ REGISTRAR VENTA
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalExtras" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark border-warning">
+                <div class="modal-header border-warning text-warning">
+                    <h5 class="modal-title Bebas Neue">✨ AÑADIR SALSAS Y EXTRAS</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" style="max-height: 70vh; overflow-y: auto;">
+                    <div class="mb-4">
+                        <h6 class="text-warning border-bottom border-secondary pb-2 mb-3 fw-bold">
+                            🥓 INGREDIENTES EXTRA
+                        </h6>
+                        <div class="row g-2" id="contenedor-ingredientes">
+                            </div>
+                    </div>
+
+                    <div>
+                        <h6 class="text-warning border-bottom border-secondary pb-2 mb-3 fw-bold">
+                            🍯 SALSAS (50ml / 100ml)
+                        </h6>
+                        <div class="row g-2" id="contenedor-salsas">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/pos.js') }}"></script>
+</body>
+</html>

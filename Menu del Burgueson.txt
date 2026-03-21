@@ -1,0 +1,96 @@
+Arquitectura monolitica
+MENU
+Hamburguesa
+Capi Bara Burger
+
+Opciones y precios (Bs):
+
+Simple – 18 Bs (1 carne de 100 gr)
+Doble – 25 Bs (2 carnes de 100 gr)
+
+--------------------------------------------------------------------------
+Hamburguesa
+Hamburgueson Clásica
+Opciones y precios (Bs):
+
+Junior - 22 Bs (1 carne de 100 gr)
+Mediana - 27 Bs (1 carne de 140 gr)
+Premiun - 30 Bs (1 carne de 180 gr)
+Premiun Doble - 42 Bs (2 carnes 180 gr)
+
+--------------------------------------------------------------------------
+Hamburguesa
+Hamburgueson Especial
+Opciones y precios (Bs):
+
+
+Junior - 25 Bs (1 carne de 100 gr)
+Mediana - 30 Bs (1 carne de 140 gr)
+Premiun - 32 Bs (1 carne de 180 gr)
+Junior Doble - 40 Bs (2 carnes 100 gr)
+Premiun Doble - 45 Bs (2 carnes 180 gr)
+
+--------------------------------------------------------------------------
+Hamburguesa
+Bacon & Cheese
+Opciones y precios (Bs):
+
+
+Mediana - 34 Bs (1 carne de 125 gr)
+Premiun - 39 Bs (1 carne de 200 gr)
+Premiun Doble - 49 Bs (2 carnes 2000 gr)
+
+--------------------------------------------------------------------------
+Hamburguesa
+Volcan Cheese
+Opciones y precios (Bs)
+
+
+Junior - 37 Bs (1 carne de 100 gr)
+Premiun - 46 Bs (1 carne de 150 gr)
+Premiun Doble - 56 Bs (2 carnes 150 gr)
+
+--------------------------------------------------------------------------
+Hamburguesa
+Yapada Supermacho
+Opciones y precios (Bs)
+
+Junior Doble - 39 Bs (2 carne de 100 gr)
+Mediana Doble - 45 Bs (2 carne de 150 gr)
+Premiun Doble - 52 Bs (2 carnes 150 gr)
+Super Doble 3XL - 125 Bs (2 carnes de 350 gr)
+
+--------------------------------------------------------------------------
+Hamburguesa
+Hamburgueson American Smash
+Opciones y precios (Bs)
+
+Junior Doble - 40 Bs (2 carne de 100 gr)
+Premiun Doble - 48 Bs (2 carnes 150 gr)
+
+--------------------------------------------------------------------------
+Sadwhiches 
+Sadwhich de Lomito Hamburgueson - 40 Bs
+Sadwhich de milanesa Hamburgueson - 40 Bs
+Sadwhich Filadelfia Cheesesteak - 38 Bs
+--------------------------------------------------------------------------
+Platos
+Milaneza a Caballo
+Milaneza Napolitana
+--------------------------------------------------------------------------
+Salsa Miel Mostaza	Mayonesa Casera			Salsa Barbacoa
+Salsa verdeo		Mostaza Especiada		Salsa Hamburgueson
+Ketchup casero		Salsa Picante Dulce		Salsa Mayo-Ranch
+
+Presentación 50 ml - 4 Bs		Presentación 100 ml - 8 Bs
+--------------------------------------------------------------------------
+Papas Fritas
+Papas cheddar - 18 Bs
+Porcion de papas 10 Bs
+--------------------------------------------------------------------------
+Sodas
+Coca-Cola, Fanta, Sprite 750ml(popular) - 9 Bs
+Coca-Cola, Fanta, Sprite 1 lt - 12 Bs
+--------------------------------------------------------------------------
+Jugos
+Jugos Delis Pelon , Linaza, Linaza Roja 1 lt - 12Bs

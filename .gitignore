@@ -1,0 +1,26 @@
+# Entornos virtuales (¡Muy importante ignorarlo!)
+venv/
+env/
+
+# Archivos compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Variables de entorno y secretos (por si los usas en el futuro)
+.env
+*.env
+
+# Archivos de Bases de Datos SQLite (Si usaste alguna para pruebas)
+*.sqlite3
+*.db
+hamburgueson_db.sql
+database/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Configuraciones de editores de código (VS Code, etc.)
+.vscode/
+.idea/
