@@ -491,7 +491,7 @@
                     ⭐ Semanal: <span class="value" id="txt-semanal">Cargando...</span>
                 </div>
                 <a href="/admin" class="btn-config">⚙️ CONFIGURACIÓN</a>
-                <button class="btn-caja" onclick="abrirCaja()">ABRIR CAJA</button>
+                <button id="btn-estado-caja" class="btn-caja" onclick="abrirCaja()">🔴 ABRIR CAJA</button>
             </div>
         </div>
     </nav>
@@ -507,6 +507,7 @@
 
                 <div class="d-flex gap-2 overflow-auto pb-3 mb-4" id="filtro-categorias">
                     <button class="btn btn-yellow btn-sm active" onclick="filtrarProductos('Todas')">Todas</button>
+                    <button class="btn btn-outline-danger btn-sm fw-bold" onclick="filtrarProductos('Promocion')">🔥 PROMOS DIARIAS</button>
                     <button class="btn btn-outline-warning btn-sm fw-bold" onclick="filtrarProductos('Semanales')">⭐ SEMANALES</button>
                     <button class="btn btn-outline-warning btn-sm" onclick="filtrarProductos('Hamburguesas')">Hamburguesas</button>
                     <button class="btn btn-outline-warning btn-sm" onclick="filtrarProductos('Sandwiches')">Sándwiches</button>

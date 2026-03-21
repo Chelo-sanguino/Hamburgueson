@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarProductos();
     actualizarDashboard();
     cargarExtras();
+    verificarEstadoCaja();
 });
 
 // 1. Cargar productos (product-card)
@@ -220,17 +221,50 @@ async function finalizarVenta() {
     }
 }
 
+async function verificarEstadoCaja() {
+    const btn = document.getElementById('btn-estado-caja');
+    if (!btn) return;
+
+    try {
+        const res = await fetch('/api/caja/estado');
+        const data = await res.json();
+
+        if (data.abierta) {
+            // DISEÑO CAJA ABIERTA (Verde)
+            btn.innerHTML = '🟢 CAJA ABIERTA';
+            btn.style.backgroundColor = '#198754'; // Verde éxito
+            btn.style.color = 'white';
+            btn.style.border = 'none';
+            // Cambiamos la acción para que no intente abrirla de nuevo
+            btn.onclick = () => alert('La caja ya está abierta. Las ventas se están registrando.');
+        } else {
+            // DISEÑO CAJA CERRADA (Amarillo/Rojo)
+            btn.innerHTML = '🔴 ABRIR CAJA';
+            btn.style.backgroundColor = 'var(--hb-yellow)';
+            btn.style.color = 'black';
+            btn.onclick = abrirCaja; // Restaura la función original
+        }
+    } catch (error) {
+        console.error("Error al verificar la caja:", error);
+    }
+}
+
 // 4. Utilidades
 async function abrirCaja() {
-    const monto = prompt("Monto inicial de caja:", "100.00");
+    const monto = prompt("Monto inicial de caja (Efectivo físico):", "100.00");
     if (!monto) return;
+    
     const res = await fetch('/api/caja/abrir', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ monto_inicial: parseFloat(monto) })
     });
+    
     const data = await res.json();
     alert(data.mensaje || data.error);
+    
+    // Alerta al botón para que cambie de color automáticamente
+    verificarEstadoCaja(); 
 }
 
 async function actualizarDashboard() {
@@ -313,3 +347,4 @@ function actualizarObservacion(index, texto) {
     carrito[index].observaciones = texto;
     console.log(`Nota guardada para ${carrito[index].nombre}: ${texto}`);
 }
+

@@ -15,6 +15,7 @@ class Producto(db.Model):
     precio_base = db.Column(db.Float, nullable=False)
     categoria = db.Column(db.String(50)) # Hamburguesas, Milanesas, Sodas, etc.
     es_semanal = db.Column(db.Boolean, default=False) # Para marcar el producto semanal
+    activo = db.Column(db.Boolean, default=True)
 
 class Extra(db.Model):
     id = db.Column(db.Integer, primary_key=True)

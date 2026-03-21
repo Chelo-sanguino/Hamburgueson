@@ -27,6 +27,16 @@ def abrir_caja():
     
     return jsonify({"mensaje": "Caja abierta correctamente", "id": nueva_caja.id}), 201
 
+@api_bp.route('/caja/estado', methods=['GET'])
+def estado_caja():
+    # Buscamos si hay alguna caja abierta en este momento
+    caja_abierta = Caja.query.filter_by(estado='Abierta').first()
+    
+    if caja_abierta:
+        return jsonify({"abierta": True, "monto_inicial": caja_abierta.monto_inicial}), 200
+    else:
+        return jsonify({"abierta": False}), 200
+
 # --- CONTROL DE VENTAS ---
 @api_bp.route('/venta/nueva', methods=['POST'])
 def nueva_venta():
@@ -96,23 +106,16 @@ def imprimir_ticket(venta_id):
         return jsonify({"error": "Venta no encontrada"}), 404
 
     ancho = 58 * mm
-    # Calculamos alto dinámico
-    alto = (60 + (len(venta.detalles) * 20)) * mm 
+    # MEJORA: Aumentamos a 25 * mm por producto para dar más espacio a los Combos y Salsas
+    alto = (70 + (len(venta.detalles) * 28)) * mm 
     
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=(ancho, alto))
     
-    # ==========================================
-    # PAGINA 1: TICKET PARA EL CLIENTE (CON PRECIOS)
-    # ==========================================
     dibujar_contenido_ticket(c, venta, ancho, alto, modo="cliente")
-    c.showPage() # Finaliza la primera página
-
-    # ==========================================
-    # PAGINA 2: TICKET PARA COCINA (SOLO PREPARACIÓN)
-    # ==========================================
+    c.showPage() 
     dibujar_contenido_ticket(c, venta, ancho, alto, modo="cocina")
-    c.showPage() # Finaliza la segunda página
+    c.showPage() 
 
     c.save()
     buffer.seek(0)
@@ -122,30 +125,30 @@ def imprimir_ticket(venta_id):
 def dibujar_contenido_ticket(c, venta, ancho, alto, modo="cliente"):
     y = alto - 10 * mm
     
-    # Encabezado
-    titulo = "HAMBURGUESÓN" if modo == "cliente" else "--- COCINA ---"
+    titulo = "HAMBURGUESON" if modo == "cliente" else "--- COCINA ---"
     c.setFont("Helvetica-Bold", 12 if modo == "cocina" else 10)
     c.drawCentredString(ancho/2, y, titulo)
     
     y -= 5 * mm
-    c.setFont("Helvetica", 8)
+    c.setFont("Helvetica-Bold", 11 if modo == "cocina" else 8)
     c.drawCentredString(ancho/2, y, f"Pedido #: {venta.numero_pedido}")
+    
     y -= 5 * mm
+    c.setFont("Helvetica", 8)
     c.drawString(5 * mm, y, f"Fecha: {venta.fecha_hora.strftime('%d/%m/%Y %H:%M')}")
     y -= 4 * mm
     c.drawString(5 * mm, y, "-" * 35)
     y -= 6 * mm
 
-    # Productos
     for detalle in venta.detalles:
         prod = Producto.query.get(detalle.producto_id)
         
-        # Resaltado de producto y cantidad
         texto_prod = f"{detalle.cantidad}x {prod.nombre}"
         fuente_p = "Helvetica-Bold"
-        tamano_p = 10 if modo == "cocina" else 9
+        # MEJORA: Letra más grande para cocina
+        tamano_p = 11 if modo == "cocina" else 9
         
-        ancho_texto = ancho - (22 * mm if modo == "cliente" else 10 * mm)
+        ancho_texto = ancho - (22 * mm if modo == "cliente" else 5 * mm)
         lineas = simpleSplit(texto_prod, fuente_p, tamano_p, ancho_texto)
         
         y_ini = y
@@ -154,36 +157,47 @@ def dibujar_contenido_ticket(c, venta, ancho, alto, modo="cliente"):
             c.drawString(5 * mm, y, linea)
             y -= 4 * mm
 
-        # Solo mostramos el precio si es para el cliente
         if modo == "cliente":
-            c.setFont("Helvetica", 9)
+            c.setFont("Helvetica-Bold", 9)
+            # MEJORA: Alineación exacta del subtotal
             c.drawRightString(ancho - 5 * mm, y_ini, f"{detalle.subtotal:.2f}")
 
-        # Extras y Observaciones (Vital para cocina)
-        for extra in detalle.extras:
-            c.setFont("Helvetica-Oblique", 7)
-            c.drawString(8 * mm, y, f"+ {extra.nombre}")
-            y -= 3.5 * mm
+        # Salsas y Extras
+        if detalle.extras:
+            y -= 1 * mm
+            for extra in detalle.extras:
+                c.setFont("Helvetica-Oblique", 7 if modo == "cliente" else 8)
+                c.drawString(8 * mm, y, f"+ {extra.nombre}")
+                y -= 3.5 * mm
             
+        # Observaciones
         if detalle.observaciones:
             c.setFont("Helvetica-BoldOblique", 8 if modo == "cocina" else 7)
-            c.drawString(8 * mm, y, f"OBS: {detalle.observaciones}")
+            # Resaltamos visualmente la nota para el chef
+            c.drawString(8 * mm, y, f"NOTA: {detalle.observaciones}")
             y -= 4 * mm
         
-        y -= 2 * mm
+        y -= 4 * mm # Espacio extra entre productos distintos
 
     # Pie del Ticket
     if modo == "cliente":
-        c.drawString(5 * mm, y, "-" * 35)
-        y -= 5 * mm
-        c.setFont("Helvetica-Bold", 10)
+        c.drawString(5 * mm, y, "=" * 35)
+        y -= 6 * mm
+        c.setFont("Helvetica-Bold", 12) 
         c.drawString(5 * mm, y, "TOTAL:")
         c.drawRightString(ancho - 5 * mm, y, f"{venta.total:.2f} Bs.")
+        
+        # --- NUEVO: IMPRIMIR EL MÉTODO DE PAGO ---
+        y -= 5 * mm
+        c.setFont("Helvetica-Bold", 8)
+        c.drawString(5 * mm, y, f"PAGO: {venta.metodo_pago.upper()}")
+        
         y -= 8 * mm
         c.setFont("Helvetica-Oblique", 7)
-        c.drawCentredString(ancho/2, y, "¡Gracias por su compra!")
+        c.drawCentredString(ancho/2, y, "¡Gracias por su preferencia!")
     else:
         y -= 5 * mm
+        c.setFont("Helvetica-Bold", 9)
         c.drawCentredString(ancho/2, y, "--- FIN DE ORDEN ---")
 
 @api_bp.route('/stats/mensual', methods=['GET'])
@@ -272,7 +286,8 @@ def configurar_semanal():
 
 @api_bp.route('/productos', methods=['GET'])
 def listar_productos():
-    productos = Producto.query.all()
+    # Filtrar para que solo devuelva los que tienen activo=True
+    productos = Producto.query.filter_by(activo=True).all()
     return jsonify([{
         "id": p.id,
         "nombre": p.nombre,
@@ -317,11 +332,17 @@ def eliminar_producto(id):
         return jsonify({"error": "Producto no encontrado"}), 404
     
     try:
+        # Intentamos borrarlo físicamente de la base de datos
         db.session.delete(producto)
         db.session.commit()
-        return jsonify({"mensaje": "Producto eliminado"})
+        return jsonify({"mensaje": "Producto eliminado definitivamente"})
     except:
-        return jsonify({"error": "No se puede eliminar un producto con ventas registradas"}), 400
+        # Si da error (porque ya se vendió antes), hacemos el "Borrado Lógico"
+        db.session.rollback()
+        producto.activo = False
+        producto.es_semanal = False # Le quitamos la estrella por si acaso
+        db.session.commit()
+        return jsonify({"mensaje": "Producto archivado correctamente (ya tenía ventas registradas)"}), 200
     
 # --- GESTIÓN DE EXTRAS ---
 @api_bp.route('/extras', methods=['GET'])
@@ -345,7 +366,17 @@ def crear_extra():
 def cerrar_caja():
     caja = Caja.query.filter_by(estado='Abierta').first()
     if not caja:
-        return jsonify({"error": "No hay una caja abierta para cerrar"}), 400
+       return jsonify({
+        "mensaje": "Caja cerrada exitosamente",
+        "caja_id": caja.id, # <-- ESTA LÍNEA ES NUEVA Y VITAL
+        "resumen": {
+            "inicial": caja.monto_inicial,
+            "ventas_efectivo": total_efectivo,
+            "ventas_qr": total_qr,
+            "ventas_tarjeta": total_tarjeta,
+            "total_en_caja": monto_final_esperado
+        }
+    }), 200
 
     # 1. Calculamos totales por método de pago
     ventas = Venta.query.filter_by(caja_id=caja.id).all()
@@ -364,6 +395,7 @@ def cerrar_caja():
 
     return jsonify({
         "mensaje": "Caja cerrada exitosamente",
+        "caja_id": caja.id, 
         "resumen": {
             "inicial": caja.monto_inicial,
             "ventas_efectivo": total_efectivo,
@@ -372,3 +404,78 @@ def cerrar_caja():
             "total_en_caja": monto_final_esperado
         }
     }), 200
+
+@api_bp.route('/caja/ticket_cierre/<int:caja_id>', methods=['GET'])
+def imprimir_ticket_cierre(caja_id):
+    caja = Caja.query.get(caja_id)
+    if not caja:
+        return jsonify({"error": "Caja no encontrada"}), 404
+
+    # Recalculamos los totales de esa caja específica
+    ventas = Venta.query.filter_by(caja_id=caja.id).all()
+    total_efectivo = sum(v.total for v in ventas if v.metodo_pago == 'Efectivo')
+    total_qr = sum(v.total for v in ventas if v.metodo_pago == 'QR')
+    total_ventas = total_efectivo + total_qr
+    monto_esperado = caja.monto_inicial + total_efectivo
+
+    # Lienzo de 58mm para tu impresora Knup
+    ancho = 58 * mm
+    alto = 120 * mm 
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=(ancho, alto))
+
+    # --- DISEÑO DEL TICKET DE CIERRE ---
+    y = alto - 10 * mm  # <--- AQUÍ NACE LA VARIABLE 'y'
+    
+    c.setFont("Helvetica-Bold", 12)
+    c.drawCentredString(ancho/2, y, "CIERRE DE TURNO")
+
+    y -= 6 * mm
+    c.setFont("Helvetica", 8)
+    c.drawString(5 * mm, y, f"Apertura: {caja.fecha_apertura.strftime('%d/%m/%Y %H:%M')}")
+    y -= 4 * mm
+    c.drawString(5 * mm, y, f"Cierre: {caja.fecha_cierre.strftime('%d/%m/%Y %H:%M')}")
+    y -= 4 * mm
+    c.drawString(5 * mm, y, "-" * 35)
+
+    y -= 6 * mm
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(5 * mm, y, "DESGLOSE DE INGRESOS:")
+    y -= 5 * mm
+    c.setFont("Helvetica", 9)
+    c.drawString(5 * mm, y, "Fondo Inicial:")
+    c.drawRightString(ancho - 5 * mm, y, f"{caja.monto_inicial:.2f}")
+
+    y -= 5 * mm
+    c.drawString(5 * mm, y, "Ventas en Efectivo:")
+    c.drawRightString(ancho - 5 * mm, y, f"+ {total_efectivo:.2f}")
+
+    y -= 5 * mm
+    c.drawString(5 * mm, y, "Ventas por QR:")
+    c.drawRightString(ancho - 5 * mm, y, f"+ {total_qr:.2f}")
+
+    y -= 5 * mm
+    c.drawString(5 * mm, y, "-" * 35)
+
+    # --- PARTE FINAL CORREGIDA ---
+    y -= 6 * mm
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(5 * mm, y, "TOTAL VENTAS:")
+    c.drawRightString(ancho - 5 * mm, y, f"{total_ventas:.2f} Bs.")
+
+    y -= 6 * mm
+    c.drawString(5 * mm, y, "=" * 35)
+    
+    y -= 6 * mm
+    c.setFont("Helvetica-Bold", 10)
+    c.drawCentredString(ancho/2, y, "EFECTIVO A ENTREGAR")
+    
+    y -= 6 * mm
+    c.setFont("Helvetica-Bold", 14) 
+    c.drawCentredString(ancho/2, y, f"> {monto_esperado:.2f} Bs. <")
+
+    c.showPage()
+    c.save()
+
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=False, mimetype='application/pdf')

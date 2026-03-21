@@ -163,21 +163,92 @@ async function eliminarProducto(id) {
     }
 }
 
-// 8. Cierre de Caja
+// 8. Cierre de Caja a prueba de bloqueos
 async function ejecutarCierre() {
-    if (!confirm("¿Estás seguro de cerrar la caja actual?")) return;
+    if (!confirm("⚠️ ¿Estás seguro de cerrar la caja actual?")) return;
 
-    const res = await fetch('/api/caja/cerrar', { method: 'POST' });
-    const data = await res.json();
+    // 1. Abrimos la pestaña ANTES de hablar con el servidor (Evita el bloqueo)
+    const ventanaPDF = window.open('', '_blank');
+    ventanaPDF.document.write('<h2>Generando reporte de cierre... por favor espere.</h2>');
 
-    if (res.ok) {
-        const r = data.resumen;
-        alert(`--- REPORTE DE CIERRE ---
-        Ventas Efectivo: ${r.ventas_efectivo} Bs.
-        Ventas QR: ${r.ventas_qr} Bs.
-        Ventas Tarjeta: ${r.ventas_tarjeta} Bs.
-        -------------------------
-        SALDO TOTAL EN CAJA: ${r.total_en_caja} Bs.`);
-        location.reload();
+    try {
+        const res = await fetch('/api/caja/cerrar', { method: 'POST' });
+        const data = await res.json();
+
+        if (res.ok) {
+            // 2. Si el servidor nos dio el ID, redirigimos la pestaña al PDF
+            if (data.caja_id) {
+                ventanaPDF.location.href = `/api/caja/ticket_cierre/${data.caja_id}`;
+            } else {
+                ventanaPDF.close();
+                alert("Error: El servidor no envió el ID de la caja.");
+            }
+
+            // 3. Pequeña pausa para asegurar la carga, luego recargamos el panel
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+
+        } else {
+            ventanaPDF.close();
+            alert(data.error || "Error al cerrar la caja");
+        }
+    } catch (error) {
+        ventanaPDF.close();
+        console.error(error);
+        alert("Error de conexión con el servidor.");
     }
+}
+
+// Cargar opciones en los selectores de promos
+async function cargarOpcionesPromo() {
+    const res = await fetch('/api/productos');
+    const productos = await res.json();
+    const b1 = document.getElementById('promo-burger-1');
+    const b2 = document.getElementById('promo-burger-2');
+    
+    // Filtramos solo para que muestre hamburguesas
+    const hamburguesas = productos.filter(p => p.categoria === 'Hamburguesas');
+    
+    let opciones = '<option value="">Selecciona...</option>';
+    hamburguesas.forEach(h => {
+        opciones += `<option value="${h.nombre}">${h.nombre}</option>`;
+    });
+
+    if(b1 && b2) {
+        b1.innerHTML = opciones;
+        b2.innerHTML = opciones;
+    }
+}
+// Llamamos a la función al cargar la página
+document.addEventListener('DOMContentLoaded', cargarOpcionesPromo);
+
+// Guardar la Promo Diaria
+const formPromo = document.getElementById('form-promo-diaria');
+if (formPromo) {
+    formPromo.onsubmit = async (e) => {
+        e.preventDefault();
+        const burger1 = document.getElementById('promo-burger-1').value;
+        const burger2 = document.getElementById('promo-burger-2').value;
+        const precio = document.getElementById('promo-precio').value;
+
+        // El truco: Fusionamos los nombres
+        const nombrePromo = `PROMO: ${burger1} + ${burger2}`;
+
+        // Reutilizamos tu ruta de creación de productos
+        const res = await fetch('/api/productos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nombre: nombrePromo,
+                precio: parseFloat(precio),
+                categoria: 'Promocion' // Nueva categoría especial
+            })
+        });
+
+        if (res.ok) {
+            alert("¡Promoción Diaria creada con éxito!");
+            location.reload();
+        }
+    };
 }
