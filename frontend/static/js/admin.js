@@ -110,6 +110,8 @@ async function cargarEstadisticas() {
         document.getElementById('stat-ganancia').innerText = `${data.ganancia_total} Bs.`;
         document.getElementById('stat-mas-vendido-nombre').innerText = data.mas_vendido.nombre;
         document.getElementById('stat-mas-vendido-cantidad').innerText = `${data.mas_vendido.cantidad} unidades`;
+        document.getElementById('stat-menos-vendido-nombre').innerText = data.menos_vendido.nombre;
+        document.getElementById('stat-menos-vendido-cantidad').innerText = `${data.menos_vendido.cantidad} unidades`;
     }
 }
 
