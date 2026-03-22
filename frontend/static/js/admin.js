@@ -254,3 +254,13 @@ if (formPromo) {
         }
     };
 }
+
+// 9. Imprimir Reporte Diario de Productos
+function imprimirReporteProductos() {
+    // Abrimos una pestaña en blanco inmediatamente para evitar bloqueos del navegador
+    const ventanaReporte = window.open('', '_blank');
+    ventanaReporte.document.write('<h2 style="font-family: sans-serif;">Generando reporte de inventario...</h2>');
+    
+    // Le decimos a la pestaña que cargue nuestro nuevo PDF de la ruta
+    ventanaReporte.location.href = '/api/reportes/diario_productos';
+}

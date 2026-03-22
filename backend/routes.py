@@ -479,3 +479,94 @@ def imprimir_ticket_cierre(caja_id):
 
     buffer.seek(0)
     return send_file(buffer, as_attachment=False, mimetype='application/pdf')
+
+@api_bp.route('/reportes/diario_productos', methods=['GET'])
+def reporte_diario_productos():
+    # 1. Calculamos el inicio del día actual (00:00:00)
+    hoy_inicio = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # 2. Consultamos todos los detalles de venta de HOY
+    detalles_hoy = db.session.query(
+        Producto.nombre,
+        func.sum(DetalleVenta.cantidad).label('total_cantidad'),
+        func.sum(DetalleVenta.subtotal).label('total_recaudado')
+    ).join(DetalleVenta, Producto.id == DetalleVenta.producto_id)\
+     .join(Venta, DetalleVenta.venta_id == Venta.id)\
+     .filter(Venta.fecha_hora >= hoy_inicio)\
+     .group_by(Producto.id).order_by(func.sum(DetalleVenta.cantidad).desc()).all()
+
+    # --- MEDIDAS EXACTAS: HOJA TAMAÑO CARTA (8.5 x 11 pulgadas) ---
+    ancho = 215.9 * mm
+    alto = 279.4 * mm
+
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=(ancho, alto))
+
+    # Si no hay ventas, mostramos un mensaje centrado
+    if not detalles_hoy:
+        c.setFont("Helvetica-Bold", 16)
+        c.drawCentredString(ancho/2, alto/2, "SIN VENTAS REGISTRADAS HOY")
+        c.showPage()
+        c.save()
+        buffer.seek(0)
+        return send_file(buffer, as_attachment=False, mimetype='application/pdf')
+
+    # --- FUNCIÓN INTERNA PARA DIBUJAR LA CABECERA DE LA TABLA ---
+    def dibujar_encabezado(lienzo, y_pos):
+        lienzo.setFont("Helvetica-Bold", 16)
+        lienzo.drawCentredString(ancho/2, y_pos, "REPORTE DIARIO DE VENTAS - HAMBURGUESÓN")
+        y_pos -= 8 * mm
+        
+        lienzo.setFont("Helvetica", 10)
+        lienzo.drawCentredString(ancho/2, y_pos, f"Fecha de generación: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        y_pos -= 12 * mm
+        
+        # Columnas de la tabla
+        lienzo.setFont("Helvetica-Bold", 11)
+        lienzo.drawString(20 * mm, y_pos, "PRODUCTO")
+        lienzo.drawCentredString(ancho/2 + 20 * mm, y_pos, "CANTIDAD")
+        lienzo.drawRightString(ancho - 20 * mm, y_pos, "RECAUDADO (Bs.)")
+        
+        y_pos -= 3 * mm
+        lienzo.line(20 * mm, y_pos, ancho - 20 * mm, y_pos) # Línea separadora
+        y_pos -= 8 * mm
+        return y_pos
+
+    # Empezamos a dibujar desde arriba hacia abajo
+    y = alto - 25 * mm
+    y = dibujar_encabezado(c, y)
+    
+    total_general = 0
+    
+    # 3. Llenamos la tabla con los datos
+    for nombre, cantidad, recaudado in detalles_hoy:
+        # Lógica de Salto de Página: Si llegamos al final de la hoja, creamos una nueva
+        if y < 30 * mm:  
+            c.showPage()
+            y = alto - 25 * mm
+            y = dibujar_encabezado(c, y)
+
+        c.setFont("Helvetica", 10)
+        
+        # Fila de datos
+        c.drawString(20 * mm, y, nombre)
+        c.drawCentredString(ancho/2 + 20 * mm, y, str(int(cantidad)))
+        c.drawRightString(ancho - 20 * mm, y, f"{recaudado:.2f}")
+        
+        total_general += recaudado
+        y -= 7 * mm # Avanzamos a la siguiente línea
+        
+    # 4. Total Final al pie de la tabla
+    y -= 5 * mm
+    c.line(20 * mm, y, ancho - 20 * mm, y) # Línea de cierre
+    y -= 8 * mm
+    
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(20 * mm, y, "TOTAL INGRESOS POR PRODUCTOS:")
+    c.drawRightString(ancho - 20 * mm, y, f"{total_general:.2f} Bs.")
+
+    c.showPage()
+    c.save()
+
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=False, mimetype='application/pdf')
