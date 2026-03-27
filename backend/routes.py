@@ -1,12 +1,13 @@
 from flask import Blueprint, request, jsonify
 from models import db, Caja, Producto, Venta, DetalleVenta, Extra
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import func, extract
 from flask import send_file
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import mm
 from reportlab.lib.utils import simpleSplit
 import io
+
 
 api_bp = Blueprint('api', __name__)
 
@@ -573,28 +574,43 @@ def reporte_diario_productos():
 
 @api_bp.route('/auditoria', methods=['GET'])
 def auditoria_ventas():
-    # Buscamos TODAS las ventas de hoy, sin importar cuántas veces abrieron la caja
-    hoy_inicio = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    ventas_hoy = Venta.query.filter(Venta.fecha_hora >= hoy_inicio).order_by(Venta.numero_pedido.asc()).all()
+    # Buscamos si enviaste una fecha específica en la URL (Ej: ?fecha=2026-03-26)
+    fecha_str = request.args.get('fecha')
     
-    html = """
+    if fecha_str:
+        inicio_dia = datetime.strptime(fecha_str, '%Y-%m-%d')
+    else:
+        # Si no pones fecha, asume que quieres ver los de hoy
+        inicio_dia = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        
+    fin_dia = inicio_dia + timedelta(days=1)
+    
+    # Filtramos las ventas estrictamente de ese día
+    ventas_dia = Venta.query.filter(
+        Venta.fecha_hora >= inicio_dia, 
+        Venta.fecha_hora < fin_dia
+    ).order_by(Venta.numero_pedido.asc()).all()
+    
+    fecha_mostrar = inicio_dia.strftime('%d/%m/%Y')
+    
+    html = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <title>Auditoría Hamburguesón</title>
         <style>
-            body { font-family: Arial, sans-serif; background-color: #121212; color: white; padding: 20px; }
-            h2 { color: #ffc107; text-align: center; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #1e1e1e; }
-            th, td { border: 1px solid #ffc107; padding: 12px; text-align: center; }
-            th { background-color: #ffc107; color: black; font-weight: bold; }
-            .qr { color: #0dcaf0; font-weight: bold; }
-            .efectivo { color: #198754; font-weight: bold; }
+            body {{ font-family: Arial, sans-serif; background-color: #121212; color: white; padding: 20px; }}
+            h2 {{ color: #ffc107; text-align: center; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 20px; background: #1e1e1e; }}
+            th, td {{ border: 1px solid #ffc107; padding: 12px; text-align: center; }}
+            th {{ background-color: #ffc107; color: black; font-weight: bold; }}
+            .qr {{ color: #0dcaf0; font-weight: bold; }}
+            .efectivo {{ color: #198754; font-weight: bold; }}
         </style>
     </head>
     <body>
-        <h2>🔍 AUDITORÍA FORENSE DE VENTAS (HOY)</h2>
-        <p style="text-align: center;">Revisa esta lista y compárala <b>uno a uno</b> con los 45 tickets físicos.</p>
+        <h2>🔍 AUDITORÍA FORENSE DE VENTAS ({fecha_mostrar})</h2>
+        <p style="text-align: center;">Revisa esta lista y compárala <b>uno a uno</b> con los tickets físicos de ese día.</p>
         <table>
             <tr>
                 <th>Nº Pedido</th>
@@ -605,7 +621,7 @@ def auditoria_ventas():
     """
     
     suma_total = 0
-    for v in ventas_hoy:
+    for v in ventas_dia:
         clase_pago = "efectivo" if v.metodo_pago == "Efectivo" else "qr"
         html += f"<tr>"
         html += f"<td><b>#{v.numero_pedido}</b></td>"
@@ -617,7 +633,7 @@ def auditoria_ventas():
         
     html += f"""
             <tr>
-                <th colspan="3" style="text-align: right; font-size: 1.2em;">Suma Absoluta del Sistema (Hoy):</th>
+                <th colspan="3" style="text-align: right; font-size: 1.2em;">Suma Absoluta del Sistema ({fecha_mostrar}):</th>
                 <th style="font-size: 1.2em;">{suma_total:.2f} Bs.</th>
             </tr>
         </table>
