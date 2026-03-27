@@ -570,3 +570,58 @@ def reporte_diario_productos():
 
     buffer.seek(0)
     return send_file(buffer, as_attachment=False, mimetype='application/pdf')
+
+@api_bp.route('/auditoria', methods=['GET'])
+def auditoria_ventas():
+    # Buscamos TODAS las ventas de hoy, sin importar cuántas veces abrieron la caja
+    hoy_inicio = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    ventas_hoy = Venta.query.filter(Venta.fecha_hora >= hoy_inicio).order_by(Venta.numero_pedido.asc()).all()
+    
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Auditoría Hamburguesón</title>
+        <style>
+            body { font-family: Arial, sans-serif; background-color: #121212; color: white; padding: 20px; }
+            h2 { color: #ffc107; text-align: center; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #1e1e1e; }
+            th, td { border: 1px solid #ffc107; padding: 12px; text-align: center; }
+            th { background-color: #ffc107; color: black; font-weight: bold; }
+            .qr { color: #0dcaf0; font-weight: bold; }
+            .efectivo { color: #198754; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <h2>🔍 AUDITORÍA FORENSE DE VENTAS (HOY)</h2>
+        <p style="text-align: center;">Revisa esta lista y compárala <b>uno a uno</b> con los 45 tickets físicos.</p>
+        <table>
+            <tr>
+                <th>Nº Pedido</th>
+                <th>Hora</th>
+                <th>Método de Pago</th>
+                <th>Total Sistema</th>
+            </tr>
+    """
+    
+    suma_total = 0
+    for v in ventas_hoy:
+        clase_pago = "efectivo" if v.metodo_pago == "Efectivo" else "qr"
+        html += f"<tr>"
+        html += f"<td><b>#{v.numero_pedido}</b></td>"
+        html += f"<td>{v.fecha_hora.strftime('%H:%M')}</td>"
+        html += f"<td class='{clase_pago}'>{v.metodo_pago}</td>"
+        html += f"<td>{v.total:.2f} Bs.</td>"
+        html += f"</tr>"
+        suma_total += v.total
+        
+    html += f"""
+            <tr>
+                <th colspan="3" style="text-align: right; font-size: 1.2em;">Suma Absoluta del Sistema (Hoy):</th>
+                <th style="font-size: 1.2em;">{suma_total:.2f} Bs.</th>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+    return html
