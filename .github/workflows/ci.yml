@@ -1,0 +1,38 @@
+name: Integración Continua (CI)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Descargar el código
+      uses: actions/checkout@v3
+
+    - name: Configurar Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+    - name: Instalar dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Revisar calidad de código (Lint)
+      run: |
+        # Esto detendrá la acción si hay errores graves de sintaxis
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Esto es solo como advertencias si hay código complejo
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Ejecutar pruebas (Tests)
+      run: |
+        # Ejecuta pytest en la carpeta backend para asegurar que nada esté roto
+        pytest backend/

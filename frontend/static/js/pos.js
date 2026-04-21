@@ -1,6 +1,7 @@
 let carrito = [];
 let listaExtrasDisponibles = [];
 let itemIndexSeleccionado = null
+let procesandoVenta = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarProductos();
@@ -190,34 +191,65 @@ function renderizarCarrito() {
     totalTxt.innerText = `${total.toFixed(2)} Bs.`;
 }
 
-// 3. Finalizar Venta (Conexión con tu routes.py)
+// 3. Finalizar Venta (Con Blindaje Anti Doble-Clic)
 async function finalizarVenta() {
     if (carrito.length === 0) return alert("El carrito está vacío");
+    
+    // Si ya estamos procesando una venta, ignoramos los clics extra
+    if (procesandoVenta) return; 
 
-    const metodo = document.getElementById('metodo-pago').value; 
+    // Ponemos el candado
+    procesandoVenta = true; 
 
-    const pedido = {
-        metodo_pago: metodo,
-        productos: carrito.map(i => ({
-            id: i.id,
-            cantidad: i.cantidad,
-            observaciones: i.observaciones,
-            extras: i.extras.map(e => e.id)
-        }))
-    };
+    // Bloqueamos el botón visualmente para que el cajero sepa que está cargando
+    const btnCheckout = document.querySelector('.btn-checkout');
+    const textoOriginal = btnCheckout.innerHTML;
+    btnCheckout.innerHTML = "⏳ PROCESANDO...";
+    btnCheckout.disabled = true;
 
-    const res = await fetch('/api/venta/nueva', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pedido)
-    });
+    try {
+        const metodo = document.getElementById('metodo-pago').value; 
 
-    if (res.ok) {
-        const data = await res.json();
-        alert(`Venta registrada en ${metodo}. Pedido #${data.pedido_nro}`);
-        if(data.venta_id) window.open(`/api/venta/ticket/${data.venta_id}`, '_blank');
-        carrito = [];
-        renderizarCarrito();
+        const pedido = {
+            metodo_pago: metodo,
+            productos: carrito.map(i => ({
+                id: i.id,
+                cantidad: i.cantidad,
+                observaciones: i.observaciones,
+                extras: i.extras.map(e => e.id)
+            }))
+        };
+
+        const res = await fetch('/api/venta/nueva', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pedido)
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            // Truco: Abrimos el PDF ANTES de la alerta para evitar bloqueos del navegador
+            if(data.venta_id) window.open(`/api/venta/ticket/${data.venta_id}`, '_blank');
+            
+            // Damos una micro pausa antes de la alerta
+            setTimeout(() => {
+                alert(`Venta registrada en ${metodo}. Pedido #${data.pedido_nro}`);
+                carrito = [];
+                renderizarCarrito();
+            }, 100);
+            
+        } else {
+            const dataError = await res.json();
+            alert("Error del servidor: " + (dataError.error || "No se pudo registrar"));
+        }
+    } catch (error) {
+        console.error("Error en finalizarVenta:", error);
+        alert("Error de conexión con el servidor.");
+    } finally {
+        // Pase lo que pase (éxito o error), quitamos el candado al final
+        procesandoVenta = false;
+        btnCheckout.innerHTML = textoOriginal;
+        btnCheckout.disabled = false;
     }
 }
 
