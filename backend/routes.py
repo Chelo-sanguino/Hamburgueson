@@ -50,7 +50,7 @@ def nueva_venta():
     total_venta = 0
     
     # 2. Generar número de pedido correlativo
-    ultimo_pedido = Venta.query.order_by(Venta.id.desc()).first()
+    ultimo_pedido = Venta.query.filter_by(caja_id=caja_activa.id).order_by(Venta.id.desc()).first()
     nuevo_num_pedido = (ultimo_pedido.numero_pedido + 1) if ultimo_pedido else 1
 
     nueva_venta = Venta(

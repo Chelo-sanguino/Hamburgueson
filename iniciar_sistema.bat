@@ -12,10 +12,10 @@ timeout /t 3
 pip install flask flask-sqlalchemy reportlab
 
 :: 3. Abrir el Punto de Venta en el navegador predeterminado
-start http://127.0.0.1:5000
+start http://127.0.0.1:5001
 
 :: 4. Ejecutar el servidor de Flask
-echo 🚀 Servidor activo en http://127.0.0.1:5000
+echo 🚀 Servidor activo en http://127.0.0.1:5001
 python backend/app.py
 
 pause
